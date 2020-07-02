@@ -42,19 +42,48 @@ class RoutingServiceProvider extends BaseServiceProvider
             return Redirect::to(not_localized_route($route, $parameters), $status, $headers);
         });
 
-        Redirector::macro('toLocalized', function (string $locale, string $path, int $status = 302, array $headers = [], bool $secure = true) {
-            return Redirect::to(localized_url($locale, $path, [], $secure), $status, $headers, $secure);
-        });
+        Redirector::macro('toLocalized',
+            function (string $locale, string $path, int $status = 302, array $headers = [], bool $secure = true) {
+                return Redirect::to(localized_url($locale, $path, [], $secure), $status, $headers, $secure);
+            });
 
-        Redirector::macro('toNotLocalized', function (string $path, int $status = 302, array $headers = [], bool $secure = true) {
-            return Redirect::to(not_localized_url($path, [], $secure), $status, $headers, $secure);
-        });
+        Redirector::macro('toNotLocalized',
+            function (string $path, int $status = 302, array $headers = [], bool $secure = true) {
+                return Redirect::to(not_localized_url($path, [], $secure), $status, $headers, $secure);
+            });
     }
 
+    /**
+     * @see \Illuminate\Routing\RoutingServiceProvider::registerUrlGenerator
+     */
     private function registerUrlGenerator()
     {
         $this->app->extend('url', function (\Illuminate\Contracts\Routing\UrlGenerator $generator) {
-            return new UrlGenerator($this->app['router']->getRoutes(), $generator->getRequest());
+            $url = new UrlGenerator(
+                $this->app['router']->getRoutes(),
+                $generator->getRequest(),
+                $this->app['config']['app.asset_url']
+            );
+
+            // Next we will set a few service resolvers on the URL generator so it can
+            // get the information it needs to function. This just provides some of
+            // the convenience features to this URL generator like "signed" URLs.
+            $url->setSessionResolver(function () {
+                return $this->app['session'] ?? null;
+            });
+
+            $url->setKeyResolver(function () {
+                return $this->app['config']['app.key'];
+            });
+
+            // If the route collection is "rebound", for example, when the routes stay
+            // cached for the application, we will need to rebind the routes on the
+            // URL generator instance so it has the latest version of the routes.
+            $this->app->rebinding('routes', function ($app, $routes) {
+                $app['url']->setRoutes($routes);
+            });
+
+            return $url;
         });
     }
 }
