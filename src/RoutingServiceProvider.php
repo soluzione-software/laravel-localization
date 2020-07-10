@@ -2,6 +2,7 @@
 
 namespace SoluzioneSoftware\Localization;
 
+use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
 use Illuminate\Routing\Redirector;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\App;
@@ -58,32 +59,13 @@ class RoutingServiceProvider extends BaseServiceProvider
      */
     private function registerUrlGenerator()
     {
-        $this->app->extend('url', function (\Illuminate\Contracts\Routing\UrlGenerator $generator) {
-            $url = new UrlGenerator(
-                $this->app['router']->getRoutes(),
-                $generator->getRequest(),
+        $this->app->extend('url', function (UrlGeneratorContract $generator) {
+            return new UrlGenerator(
+                $generator,
+                $this->app['routes'],
+                $this->app['request'],
                 $this->app['config']['app.asset_url']
             );
-
-            // Next we will set a few service resolvers on the URL generator so it can
-            // get the information it needs to function. This just provides some of
-            // the convenience features to this URL generator like "signed" URLs.
-            $url->setSessionResolver(function () {
-                return $this->app['session'] ?? null;
-            });
-
-            $url->setKeyResolver(function () {
-                return $this->app['config']['app.key'];
-            });
-
-            // If the route collection is "rebound", for example, when the routes stay
-            // cached for the application, we will need to rebind the routes on the
-            // URL generator instance so it has the latest version of the routes.
-            $this->app->rebinding('routes', function ($app, $routes) {
-                $app['url']->setRoutes($routes);
-            });
-
-            return $url;
         });
     }
 }
