@@ -4,15 +4,11 @@ namespace SoluzioneSoftware\Localization;
 
 use BadMethodCallException;
 use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Exceptions\UrlGenerationException;
 use Illuminate\Routing\Route;
-use Illuminate\Routing\RouteCollectionInterface;
-use Illuminate\Routing\UrlGenerator as IlluminateUrlGenerator;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use SoluzioneSoftware\Localization\Facades\URL;
 
 class UrlGenerator implements UrlGeneratorContract
 {
@@ -21,25 +17,8 @@ class UrlGenerator implements UrlGeneratorContract
      */
     protected $urlGenerator;
 
-    /**
-     * @var RouteCollectionInterface
-     */
-    protected $routes;
-
-    /**
-     * @var UrlGeneratorContract
-     */
-    protected $illuminateUrlGenerator;
-
-    public function __construct(
-        UrlGeneratorContract $urlGenerator,
-        RouteCollectionInterface $routes,
-        Request $request,
-        ?string $assetRoot = null
-    ) {
+    public function __construct(UrlGeneratorContract $urlGenerator) {
         $this->urlGenerator = $urlGenerator;
-        $this->routes = $routes;
-        $this->illuminateUrlGenerator = new IlluminateUrlGenerator($routes, $request, $assetRoot);
     }
 
     /**
@@ -58,8 +37,8 @@ class UrlGenerator implements UrlGeneratorContract
      */
     public function route($name, $parameters = [], $absolute = true)
     {
-        return $this->routes->hasNamedRoute($name)
-            ? $this->toRoute($this->routes->getByName($name), $parameters, $absolute)
+        return Facades\Route::getRoutes()->hasNamedRoute($name)
+            ? $this->toRoute(Facades\Route::getRoutes()->getByName($name), $parameters, $absolute)
             : $this->urlGenerator->route(App::getLocale().".$name", $parameters, $absolute);
     }
 
@@ -120,7 +99,7 @@ class UrlGenerator implements UrlGeneratorContract
      */
     public function toLocalized(string $locale, string $path, $extra = [], $secure = null)
     {
-        return URL::isValidUrl($path)
+        return $this->isValidUrl($path)
             ? $path
             : $this->urlGenerator->to(Str::start($path, "/$locale"), $extra, $secure);
     }
@@ -166,6 +145,16 @@ class UrlGenerator implements UrlGeneratorContract
     }
 
     /**
+     * Get the decorated Url generator instance.
+     *
+     * @return UrlGeneratorContract
+     */
+    public function getUrlGenerator(): UrlGeneratorContract
+    {
+        return $this->urlGenerator;
+    }
+
+    /**
      * Determine if the given path is a valid URL.
      *
      * @param  string  $path
@@ -174,7 +163,7 @@ class UrlGenerator implements UrlGeneratorContract
      */
     public function isValidUrl($path)
     {
-        return $this->illuminateUrlGenerator->isValidUrl($path);
+        return $this->__call('isValidUrl', [$path]);
     }
 
     /**
@@ -189,7 +178,7 @@ class UrlGenerator implements UrlGeneratorContract
      */
     public function toRoute(Route $route, $parameters, bool $absolute)
     {
-        return $this->illuminateUrlGenerator->toRoute($route, $parameters, $absolute);
+        return $this->__call('toRoute', [$route, $parameters, $absolute]);
     }
 
     /**

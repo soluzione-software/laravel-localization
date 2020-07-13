@@ -4,7 +4,7 @@ namespace SoluzioneSoftware\Localization\Facades;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect as BaseRedirect;
-use SoluzioneSoftware\Localization\RoutingServiceProvider;
+use SoluzioneSoftware\Localization\Redirector;
 
 /**
  * @method static RedirectResponse localizedRoute(string $locale, string $route, array $parameters = [], int $status = 302, array $headers = [])
@@ -12,7 +12,7 @@ use SoluzioneSoftware\Localization\RoutingServiceProvider;
  * @method static RedirectResponse toLocalized(string $locale, string $path, int $status = 302, array $headers = [], bool $secure = null)
  * @method static RedirectResponse toNotLocalized(string $path, int $status = 302, array $headers = [], bool $secure = null)
  *
- * @see RoutingServiceProvider::bootRedirector
+ * @see Redirector
  */
 class Redirect extends BaseRedirect
 {

@@ -7,6 +7,7 @@ use SoluzioneSoftware\Localization\LocalizationManager;
 
 /**
  * @method static string current()
+ * @method static string localizeRouteName(string $routeName, ?string $locale = null)
  *
  * @see LocalizationManager
  */

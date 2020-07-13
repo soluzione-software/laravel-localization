@@ -3,12 +3,12 @@
 namespace SoluzioneSoftware\Localization;
 
 use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
-use Illuminate\Routing\Redirector;
+use Illuminate\Routing\Redirector as IlluminateRedirector;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use SoluzioneSoftware\Localization\Facades\Route;
+use SoluzioneSoftware\Localization\Facades\URL;
 
 class RoutingServiceProvider extends BaseServiceProvider
 {
@@ -18,12 +18,12 @@ class RoutingServiceProvider extends BaseServiceProvider
     public function boot()
     {
         $this->bootRouter();
-        $this->bootRedirector();
     }
 
     public function register()
     {
         $this->registerUrlGenerator();
+        $this->registerRedirector();
     }
 
     private function bootRouter()
@@ -33,39 +33,40 @@ class RoutingServiceProvider extends BaseServiceProvider
         });
     }
 
-    private function bootRedirector()
-    {
-        Redirector::macro('localizedRoute', function (string $locale, string $route, array $parameters = [], int $status = 302, array $headers = []) {
-            return Redirect::to(localized_route($locale, $route, $parameters), $status, $headers);
-        });
-
-        Redirector::macro('notLocalizedRoute', function (string $route, array $parameters = [], int $status = 302, array $headers = []) {
-            return Redirect::to(not_localized_route($route, $parameters), $status, $headers);
-        });
-
-        Redirector::macro('toLocalized',
-            function (string $locale, string $path, int $status = 302, array $headers = [], bool $secure = true) {
-                return Redirect::to(localized_url($locale, $path, [], $secure), $status, $headers, $secure);
-            });
-
-        Redirector::macro('toNotLocalized',
-            function (string $path, int $status = 302, array $headers = [], bool $secure = true) {
-                return Redirect::to(not_localized_url($path, [], $secure), $status, $headers, $secure);
-            });
-    }
-
     /**
      * @see \Illuminate\Routing\RoutingServiceProvider::registerUrlGenerator
      */
     private function registerUrlGenerator()
     {
         $this->app->extend('url', function (UrlGeneratorContract $generator) {
-            return new UrlGenerator(
-                $generator,
-                $this->app['routes'],
-                $this->app['request'],
-                $this->app['config']['app.asset_url']
-            );
+            return new UrlGenerator($generator);
+        });
+    }
+
+    /**
+     * Register the Redirector decorator.
+     *
+     * @return void
+     */
+    protected function registerRedirector()
+    {
+        $this->app->singleton('redirect', function ($app) {
+            /** @var \Illuminate\Routing\UrlGenerator $urlGenerator */
+            $urlGenerator = URL::getUrlGenerator();
+            $redirector = new IlluminateRedirector($urlGenerator);
+
+            // If the session is set on the application instance, we'll inject it into
+            // the redirector instance. This allows the redirect responses to allow
+            // for the quite convenient "with" methods that flash to the session.
+            if (isset($app['session.store'])) {
+                $redirector->setSession($app['session.store']);
+            }
+
+            return $redirector;
+        });
+
+        $this->app->extend('redirect', function (IlluminateRedirector $redirector) {
+            return new Redirector($redirector);
         });
     }
 }

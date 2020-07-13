@@ -2,6 +2,7 @@
 
 namespace SoluzioneSoftware\Localization\Facades;
 
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Routing\Route;
 
 /**
@@ -11,6 +12,7 @@ use Illuminate\Routing\Route;
  * @method static string toNotLocalized(string $path, mixed $extra = [], bool|null $secure = null)
  * @method static bool isValidUrl(string $path)
  * @method static string toRoute(Route $route, mixed $parameters, bool $absolute)
+ * @method static UrlGenerator getUrlGenerator()
  *
  * @see \SoluzioneSoftware\Localization\UrlGenerator
  */
