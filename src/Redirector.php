@@ -3,10 +3,14 @@
 namespace SoluzioneSoftware\Localization;
 
 use BadMethodCallException;
+use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
 use Illuminate\Http\RedirectResponse;
 use SoluzioneSoftware\Localization\Facades\Localization;
 use SoluzioneSoftware\Localization\Facades\URL;
 
+/**
+ * @mixin \Illuminate\Routing\Redirector
+ */
 class Redirector
 {
     /**
@@ -14,8 +18,8 @@ class Redirector
      */
     protected $redirector;
 
-    public function __construct(\Illuminate\Routing\Redirector $redirector) {
-        $this->redirector = $redirector;
+    public function __construct(UrlGeneratorContract $urlGenerator) {
+        $this->redirector = new \Illuminate\Routing\Redirector($urlGenerator);
     }
 
     /**
@@ -42,7 +46,7 @@ class Redirector
      * @param  array   $headers
      * @return RedirectResponse
      */
-    public function route(string $route, $parameters = [], int $status = 302, array $headers = []): RedirectResponse
+    public function route($route, $parameters = [], $status = 302, $headers = []): RedirectResponse
     {
         return $this->redirector->route(Localization::localizeRouteName($route), $parameters, $status, $headers);
     }
@@ -88,7 +92,7 @@ class Redirector
      */
     public function toLocalized(string $locale, string $path, int $status = 302, array $headers = [], bool $secure = true)
     {
-        return $this->redirector->to(localized_url($locale, $path, [], $secure), $status, $headers, $secure);
+        return $this->redirector->to(URL::toLocalized($locale, $path, [], $secure), $status, $headers, $secure);
     }
 
     /**
@@ -102,7 +106,17 @@ class Redirector
      */
     public function toNotLocalized(string $path, int $status = 302, array $headers = [], bool $secure = true)
     {
-        return $this->redirector->to(not_localized_url($path, [], $secure), $status, $headers, $secure);
+        return $this->redirector->to(URL::toNotLocalized($path, [], $secure), $status, $headers, $secure);
+    }
+
+    /**
+     * Get the decorated Redirector instance.
+     *
+     * @return \Illuminate\Routing\Redirector
+     */
+    public function getRedirector()
+    {
+        return $this->redirector;
     }
 
     /**
