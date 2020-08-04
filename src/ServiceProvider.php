@@ -28,7 +28,7 @@ class ServiceProvider extends BaseServiceProvider
         $this->registerLocalizationManager();
 
         Route::get('/', function () {
-            return Redirect::to('/');
+            return Redirect::toLocalized(App::getLocale(), '/');
         });
     }
 
