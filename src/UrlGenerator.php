@@ -2,95 +2,35 @@
 
 namespace SoluzioneSoftware\Localization;
 
-use BadMethodCallException;
-use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
-use Illuminate\Routing\Exceptions\UrlGenerationException;
-use Illuminate\Routing\Route;
+use DateInterval;
+use DateTimeInterface;
+use Illuminate\Routing\UrlGenerator as BaseUrlGenerator;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use SoluzioneSoftware\Localization\Facades\Localization;
 
-class UrlGenerator implements UrlGeneratorContract
+class UrlGenerator extends BaseUrlGenerator
 {
     /**
-     * @var UrlGeneratorContract
-     */
-    protected $urlGenerator;
-
-    public function __construct(UrlGeneratorContract $urlGenerator) {
-        $this->urlGenerator = $urlGenerator;
-    }
-
-    /**
      * @inheritDoc
-     */
-    public function to($path, $extra = [], $secure = null)
-    {
-        return $this->isValidUrl($path)
-            ? $path
-            : $this->urlGenerator->to(Str::start($path, '/'.App::getLocale()), $extra, $secure);
-    }
-
-    /**
-     * @inheritDoc
-     * @throws UrlGenerationException
      */
     public function route($name, $parameters = [], $absolute = true)
     {
-        return Facades\Route::getRoutes()->hasNamedRoute($name)
-            ? $this->toRoute(Facades\Route::getRoutes()->getByName($name), $parameters, $absolute)
-            : $this->urlGenerator->route(App::getLocale().".$name", $parameters, $absolute);
+        return parent::route(Localization::localizeRouteName($name), $parameters, $absolute);
     }
 
     /**
      * @inheritDoc
      */
-    public function current()
+    public function signedRoute($name, $parameters = [], $expiration = null, $absolute = true)
     {
-        return $this->urlGenerator->current();
+        return parent::signedRoute(Localization::localizeRouteName($name), $parameters, $expiration, $absolute);
     }
 
     /**
-     * @inheritDoc
-     */
-    public function previous($fallback = false)
-    {
-        return $this->urlGenerator->previous($fallback);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function secure($path, $parameters = [])
-    {
-        return $this->urlGenerator->secure($path, $parameters);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function asset($path, $secure = null)
-    {
-        return $this->urlGenerator->asset($path, $secure);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function action($action, $parameters = [], $absolute = true)
-    {
-        return $this->urlGenerator->action($action, $parameters, $absolute);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function setRootControllerNamespace($rootNamespace)
-    {
-        return $this->urlGenerator->setRootControllerNamespace($rootNamespace);
-    }
-
-    /**
+     * Generate an absolute URL to the given localized path.
+     *
      * @param  string  $locale
      * @param  string  $path
      * @param  mixed  $extra
@@ -101,21 +41,25 @@ class UrlGenerator implements UrlGeneratorContract
     {
         return $this->isValidUrl($path)
             ? $path
-            : $this->urlGenerator->to(Str::start($path, "/$locale"), $extra, $secure);
+            : parent::to(Str::start($path, "/$locale"), $extra, $secure);
     }
 
     /**
+     * Generate a localized secure, absolute URL to the given path.
+     *
+     * @param  string  $locale
      * @param  string  $path
      * @param  mixed  $extra
-     * @param  bool|null  $secure
      * @return string
      */
-    public function toNotLocalized(string $path, $extra = [], $secure = null)
+    public function localizedSecure(string $locale, string $path, $extra = [])
     {
-        return $this->urlGenerator->to($path, $extra, $secure);
+        return $this->toLocalized($locale, $path, $extra, true);
     }
 
     /**
+     * Get the URL to a localized named route.
+     *
      * @param  string  $locale
      * @param  string  $name
      * @param  mixed  $parameters
@@ -127,12 +71,14 @@ class UrlGenerator implements UrlGeneratorContract
     {
         $previousLocale = App::getLocale();
         App::setLocale($locale);
-        $route = $this->urlGenerator->route(Str::start($name, "$locale."), $parameters, $absolute);
+        $route = parent::route(Localization::localizeRouteName($name, $locale), $parameters, $absolute);
         App::setLocale($previousLocale);
         return $route;
     }
 
     /**
+     * Get the URL to a not localized named route.
+     *
      * @param  string  $name
      * @param  mixed  $parameters
      * @param  bool  $absolute
@@ -141,57 +87,68 @@ class UrlGenerator implements UrlGeneratorContract
      */
     public function notLocalizedRoute(string $name, $parameters = [], bool $absolute = true)
     {
-        return $this->urlGenerator->route($name, $parameters, $absolute);
+        return parent::route($name, $parameters, $absolute);
     }
 
     /**
-     * Get the decorated Url generator instance.
+     * Create a signed route URL for a localized named route.
      *
-     * @return UrlGeneratorContract
-     */
-    public function getUrlGenerator(): UrlGeneratorContract
-    {
-        return $this->urlGenerator;
-    }
-
-    /**
-     * Determine if the given path is a valid URL.
-     *
-     * @param  string  $path
-     * @return bool
-     * @see \Illuminate\Routing\UrlGenerator::isValidUrl
-     */
-    public function isValidUrl($path)
-    {
-        return $this->__call('isValidUrl', [$path]);
-    }
-
-    /**
-     * Get the URL for a given route instance.
-     *
-     * @param  Route  $route
-     * @param  mixed  $parameters
+     * @param  string  $locale
+     * @param  string  $name
+     * @param  array  $parameters
+     * @param  DateTimeInterface|DateInterval|int|null  $expiration
      * @param  bool  $absolute
      * @return string
-     * @throws UrlGenerationException
-     * @see \Illuminate\Routing\UrlGenerator::toRoute
      */
-    public function toRoute(Route $route, $parameters, bool $absolute)
+    public function localizedSignedRoute(string $locale, string $name, $parameters = [], $expiration = null, $absolute = true)
     {
-        return $this->__call('toRoute', [$route, $parameters, $absolute]);
+        $previousLocale = App::getLocale();
+        App::setLocale($locale);
+        $route = parent::signedRoute(Localization::localizeRouteName($name, $locale), $parameters, $expiration, $absolute);
+        App::setLocale($previousLocale);
+        return $route;
     }
 
     /**
-     * Pass dynamic methods call onto decorated UrlGenerator.
+     * Create a signed route URL for a not localized named route.
      *
-     * @param  string  $method
+     * @param  string  $name
      * @param  array  $parameters
-     * @return mixed
-     *
-     * @throws BadMethodCallException
+     * @param  DateTimeInterface|DateInterval|int|null  $expiration
+     * @param  bool  $absolute
+     * @return string
      */
-    public function __call($method, array $parameters)
+    public function notLocalizedSignedRoute($name, $parameters = [], $expiration = null, $absolute = true)
     {
-        return call_user_func_array([$this->urlGenerator, $method], $parameters);
+        return parent::signedRoute($name, $parameters, $expiration, $absolute);
+    }
+
+    /**
+     * Create a temporary signed route URL for a localized named route.
+     *
+     * @param  string  $locale
+     * @param  string  $name
+     * @param  DateTimeInterface|DateInterval|int  $expiration
+     * @param  array  $parameters
+     * @param  bool  $absolute
+     * @return string
+     */
+    public function localizedTemporarySignedRoute(string $locale, string $name, $expiration, $parameters = [], $absolute = true)
+    {
+        return parent::temporarySignedRoute(Localization::localizeRouteName($name, $locale), $expiration, $parameters, $absolute);
+    }
+
+    /**
+     * Create a temporary signed route URL for a not localized named route.
+     *
+     * @param  string  $name
+     * @param  DateTimeInterface|DateInterval|int  $expiration
+     * @param  array  $parameters
+     * @param  bool  $absolute
+     * @return string
+     */
+    public function notLocalizedTemporarySignedRoute($name, $expiration, $parameters = [], $absolute = true)
+    {
+        return parent::signedRoute($name, $expiration, $parameters, $absolute);
     }
 }

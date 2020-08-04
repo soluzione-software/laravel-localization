@@ -53,19 +53,17 @@ if (! function_exists('localized_url')) {
     }
 }
 
-if (! function_exists('not_localized_url')) {
+if (! function_exists('localized_secure_url')) {
     /**
-     * Generate a not localized url for the application.
+     * Generate a localized HTTPS url for the application.
      *
-     * @param  string|null  $path
+     * @param  string  $locale
+     * @param  string  $path
      * @param  mixed  $parameters
-     * @param  bool|null  $secure
-     * @return UrlGenerator|string
+     * @return string
      */
-    function not_localized_url($path = null, $parameters = [], $secure = null)
+    function localized_secure_url(string $locale, string $path, $parameters = []): string
     {
-        return is_null($path)
-            ? Container::getInstance()
-            : URL::toNotLocalized($path, $parameters, $secure);
+        return localized_url($locale, $path, $parameters, true);
     }
 }
