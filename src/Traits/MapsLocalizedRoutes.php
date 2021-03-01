@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 trait MapsLocalizedRoutes
 {
-    protected function mapLocalizedWebRoutes(string $namespace)
+    protected function mapLocalizedWebRoutes(?string $namespace)
     {
         $middleware = array_merge(Arr::wrap(Config::get('localization.middleware')), ['web', 'localize']);
 
