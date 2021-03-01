@@ -39,12 +39,11 @@ class RouteServiceProvider extends ServiceProvider
 }
 ```
 
+For each locale, create `routes/{locale}.web.php` routes file.
+
+Move all routes to localize from `routes/web.php` to `routes/{locale}.web.php`
+
 publish and edit config:
 ```bash
 php artisan vendor:publish --tag=localization-config
 ```
-
-For each locale in `localization.locales` config, create `routes/{locale}.web.php` routes file.
-
-Move all routes to localize from `routes/web.php` to `routes/{locale}.web.php` 
-
