@@ -6,6 +6,7 @@ use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use Illuminate\Support\Str;
 use SoluzioneSoftware\Localization\Facades\Route;
 
 class RoutingServiceProvider extends BaseServiceProvider
@@ -27,7 +28,7 @@ class RoutingServiceProvider extends BaseServiceProvider
     private function bootRouter()
     {
         Router::macro('currentLocalizedRouteName', function (string $locale) {
-            return str_replace(App::getLocale() . '.', "$locale.", Route::currentRouteName());
+            return Str::replaceFirst(App::getLocale() . '.', "$locale.", Route::currentRouteName());
         });
     }
 
