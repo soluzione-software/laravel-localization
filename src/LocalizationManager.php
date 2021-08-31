@@ -13,9 +13,14 @@ class LocalizationManager
     {
         $prefix = Route::current()->getPrefix();
 
-        return in_array($prefix, Config::get('localization.locales'))
+        return in_array($prefix, $this->all())
             ? $prefix
             : App::getLocale();
+    }
+
+    public function all(): array
+    {
+        return Config::get('localization.locales');
     }
 
     public function localizeRouteName(string $routeName, ?string $locale = null): string

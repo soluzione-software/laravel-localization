@@ -5,6 +5,7 @@ namespace SoluzioneSoftware\Localization;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use SoluzioneSoftware\Localization\Facades\Localization;
 use SoluzioneSoftware\Localization\Facades\Redirect;
 use SoluzioneSoftware\Localization\Http\Middleware\Localize;
 
@@ -20,6 +21,15 @@ class ServiceProvider extends BaseServiceProvider
         Facades\Route::aliasMiddleware('localize', Localize::class);
     }
 
+    private function bootConfig()
+    {
+        $this->publishes([
+            __DIR__.'/../config/localization.php' => App::configPath('localization.php'),
+        ], ['config', 'localization', 'localization-config']);
+
+        $this->mergeConfigFrom(__DIR__.'/../config/localization.php', 'localization');
+    }
+
     /**
      * Register the application services.
      */
@@ -28,17 +38,8 @@ class ServiceProvider extends BaseServiceProvider
         $this->registerLocalizationManager();
 
         Route::get('/', function () {
-            return Redirect::toLocalized(App::getLocale(), '/');
+            return Redirect::toLocalized(Localization::current(), '/');
         });
-    }
-
-    private function bootConfig()
-    {
-        $this->publishes([
-            __DIR__ . '/../config/localization.php' => App::configPath('localization.php'),
-        ], ['config', 'localization', 'localization-config']);
-
-        $this->mergeConfigFrom(__DIR__ . '/../config/localization.php', 'localization');
     }
 
     protected function registerLocalizationManager()
